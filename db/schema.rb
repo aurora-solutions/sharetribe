@@ -276,6 +276,15 @@ ActiveRecord::Schema.define(:version => 20150304084451) do
     t.datetime "updated_at",                  :null => false
   end
 
+  create_table "community_translations", :force => true do |t|
+    t.integer  "community_id",                  :null => false
+    t.string   "locale",          :limit => 16, :null => false
+    t.string   "translation_key",               :null => false
+    t.string   "translation"
+    t.datetime "created_at",                    :null => false
+    t.datetime "updated_at",                    :null => false
+  end
+
   create_table "contact_requests", :force => true do |t|
     t.string   "email"
     t.datetime "created_at"
