@@ -171,7 +171,8 @@ class ListingsController < ApplicationController
 
     params[:listing] = normalize_price_param(params[:listing]);
 
-    @listing = Listing.new(params[:listing])
+    create_params = create_listing_params(params[:listing])
+    @listing = Listing.new(create_params)
 
     @listing.author = @current_user
     @listing.custom_field_values = create_field_values(params[:custom_fields])
@@ -209,7 +210,7 @@ class ListingsController < ApplicationController
     @custom_field_questions = @listing.category.custom_fields.find_all_by_community_id(@current_community.id)
     @numeric_field_ids = numeric_field_ids(@custom_field_questions)
 
-    render locals: commission(@current_community)
+    render locals: commission(@current_community).merge(shipping_enabled: shipping_enabled?(@current_community))
   end
 
   def update
@@ -222,9 +223,11 @@ class ListingsController < ApplicationController
 
     @listing.custom_field_values = create_field_values(params[:custom_fields])
 
-    params[:listing] = normalize_price_param(params[:listing]);
+    params[:listing] = normalize_price_param(params[:listing])
 
-    if @listing.update_fields(params[:listing])
+    update_params = create_listing_params(params[:listing])
+
+    if @listing.update_fields(update_params)
       @listing.location.update_attributes(params[:location]) if @listing.location
       flash[:notice] = t("layouts.notifications.listing_updated_successfully")
       Delayed::Job.enqueue(ListingUpdatedJob.new(@listing.id, @current_community.id))
@@ -562,5 +565,11 @@ class ListingsController < ApplicationController
     else
       []
     end
+  end
+
+  def create_listing_params(params)
+    params[:require_shipping_address] = params[:delivery_methods].include?("shipping")
+    params[:pickup_enabled] = params[:delivery_methods].include?("pickup")
+    params.except(:delivery_methods)
   end
 end
